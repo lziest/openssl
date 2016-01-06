@@ -106,6 +106,7 @@ typedef enum {
 typedef enum {
     READ_STATE_HEADER,
     READ_STATE_BODY,
+    READ_STATE_BODY_PROCESS,
     READ_STATE_POST_PROCESS
 } READ_STATE;
 

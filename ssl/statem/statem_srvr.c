@@ -1182,6 +1182,8 @@ MSG_PROCESS_RETURN tls_process_client_hello(SSL *s, PACKET *pkt)
             s->hit = 1;
         } else if (i == -1) {
             goto err;
+        } else if (i == 2) {
+            return MSG_PROCESS_RETRY;
         } else {
             /* i == 0 */
             if (!ssl_get_new_session(s, 1))

@@ -75,6 +75,8 @@
 typedef enum {
     /* Something bad happened */
     MSG_PROCESS_ERROR,
+    /* We need to retry the processing */
+    MSG_PROCESS_RETRY,
     /* We've finished reading - swap to writing */
     MSG_PROCESS_FINISHED_READING,
     /*

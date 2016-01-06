@@ -607,9 +607,19 @@ static SUB_STATE_RETURN read_state_machine(SSL *s) {
                 SSLerr(SSL_F_READ_STATE_MACHINE, ERR_R_INTERNAL_ERROR);
                 return SUB_STATE_ERROR;
             }
+
+            st->read_state = READ_STATE_BODY_PROCESS;
+            /* Fall through */
+
+        case READ_STATE_BODY_PROCESS:
             ret = process_message(s, &pkt);
             if (ret == MSG_PROCESS_ERROR) {
                 return SUB_STATE_ERROR;
+            }
+
+            if (ret == MSG_PROCESS_RETRY) {
+                /* Do nothing and retry the same state */
+                break;
             }
 
             if (ret == MSG_PROCESS_FINISHED_READING) {

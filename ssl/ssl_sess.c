@@ -146,6 +146,15 @@
 static void SSL_SESSION_list_remove(SSL_CTX *ctx, SSL_SESSION *s);
 static void SSL_SESSION_list_add(SSL_CTX *ctx, SSL_SESSION *s);
 static int remove_session_lock(SSL_CTX *ctx, SSL_SESSION *c, int lck);
+/* The address of this is a magic value, a pointer to which is returned by
+ * SSL_magic_pending_session_ptr(). It allows a session callback to indicate
+ * that it needs to asynchronously fetch session information. */
+static char g_pending_session_magic;
+
+SSL_SESSION *SSL_magic_pending_session_ptr()
+{
+    return (SSL_SESSION*) &g_pending_session_magic;
+}
 
 SSL_SESSION *SSL_get_session(const SSL *ssl)
 /* aka SSL_get0_session; gets 0 objects, just returns a copy of the pointer */
@@ -513,7 +522,9 @@ int ssl_get_new_session(SSL *s, int session)
  *
  * Returns:
  *   -1: error
- *    0: a session may have been found.
+ *    0: a session is not found.
+ *    1: a session may have been found
+ *    2: a session lookup is busy, need retry
  *
  * Side effects:
  *   - If a session is found then s->session is pointed at it (after freeing an
@@ -590,6 +601,11 @@ int ssl_get_prev_session(SSL *s, const PACKET *ext, const PACKET *session_id)
         OPENSSL_free(sid);
 
         if (ret != NULL) {
+            if (ret == SSL_magic_pending_session_ptr()) {
+                /* The magic value indicating that the callback needs to
+                 * be retried since the session is looked up asynchronously. */
+                return 2;
+            }
             s->session_ctx->stats.sess_cb_hit++;
 
             /*
